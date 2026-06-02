@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { fetchProjects, patchNote, clearConfig } from "./api";
+import { fetchProjects, patchNote } from "./api";
 import { parseNote, toggleTodoInContent, addLogEntryToContent } from "./parseNote";
 import LowPolyIcon from "./LowPolyIcon";
 import KindStage from "./KindStage";
