@@ -28,7 +28,7 @@ function base() {
 }
 
 export async function fetchProjects() {
-  const r = await authFetch(`${base()}/api/notes?tag=project&limit=100`);
+  const r = await authFetch(`${base()}/api/notes?tag=project&limit=100&include_content=true`);
   const data = await r.json();
   return Array.isArray(data) ? data : data.notes ?? [];
 }
