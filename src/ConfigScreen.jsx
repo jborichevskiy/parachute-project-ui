@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { beginOAuth } from "./oauth";
-import { MONO, DISPLAY, INK, MUTED, HAIR, BG } from "./styles";
+import { MONO, DISPLAY, INK, MUTED, HAIR, BG, ON_INK } from "./styles";
 
 export default function ConfigScreen() {
   const [url, setUrl] = useState("");
@@ -24,7 +24,7 @@ export default function ConfigScreen() {
   const field = {
     fontFamily: MONO, fontSize: 13, padding: "10px 12px",
     border: `1px solid ${HAIR}`, borderRadius: 6,
-    background: "#fff", color: INK, width: "100%", boxSizing: "border-box",
+    background: "var(--paper)", color: INK, width: "100%", boxSizing: "border-box",
   };
 
   return (
@@ -58,7 +58,7 @@ export default function ConfigScreen() {
           <button
             type="submit"
             disabled={loading}
-            style={{ fontFamily: MONO, fontSize: 13, padding: "12px", border: "none", borderRadius: 6, background: INK, color: "#faf8f3", cursor: loading ? "default" : "pointer", opacity: loading ? 0.6 : 1, marginTop: 4 }}
+            style={{ fontFamily: MONO, fontSize: 13, padding: "12px", border: "none", borderRadius: 6, background: INK, color: ON_INK, cursor: loading ? "default" : "pointer", opacity: loading ? 0.6 : 1, marginTop: 4 }}
           >
             {loading ? "connecting…" : "connect →"}
           </button>

@@ -4,7 +4,7 @@ import { parseNote, toggleTodoInContent, addLogEntryToContent } from "./parseNot
 import LowPolyIcon from "./LowPolyIcon";
 import KindStage from "./KindStage";
 import Drawer from "./Drawer";
-import { MONO, DISPLAY, INK, MUTED, HAIR, KIND_COLOR } from "./styles";
+import { MONO, DISPLAY, INK, MUTED, HAIR, BG, KIND_COLOR, ON_INK } from "./styles";
 
 function ZoneLabel({ children, count }) {
   return (
@@ -16,12 +16,12 @@ function ZoneLabel({ children, count }) {
 }
 
 function meta(p) {
-  const done = p.todos.filter((t) => t.done).length;
-  return { done, total: p.todos.length, last: p.log[0]?.date };
+  const remaining = p.todos.filter((t) => !t.done).length;
+  return { remaining, last: p.log[0]?.date };
 }
 
 function BenchCard({ p, onClick, delay }) {
-  const { done, total, last } = meta(p);
+  const { remaining, last } = meta(p);
   return (
     <button onClick={onClick} className="card"
       style={{ animation: `rise .5s ${delay}s both ease-out`, textAlign: "left", cursor: "pointer", background: "transparent", border: "none", borderTop: `1px solid ${HAIR}`, padding: "18px 4px 4px", display: "flex", gap: 14, width: "100%" }}>
@@ -29,21 +29,9 @@ function BenchCard({ p, onClick, delay }) {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontFamily: DISPLAY, fontWeight: 600, fontSize: 18, color: INK, lineHeight: 1.12, marginBottom: 7 }}>{p.title}</div>
         <KindStage p={p} />
-        <div style={{ marginTop: 11 }}>
-          {total > 0 ? (
-            <>
-              <div style={{ height: 2, background: HAIR, position: "relative" }}>
-                <div style={{ position: "absolute", left: 0, top: 0, height: 2, width: `${(done / total) * 100}%`, background: KIND_COLOR[p.kind] }} />
-              </div>
-              <div style={{ fontFamily: MONO, fontSize: 10, color: MUTED, marginTop: 6, display: "flex", justifyContent: "space-between" }}>
-                <span>{done}/{total} done</span>{last && <span>{last}</span>}
-              </div>
-            </>
-          ) : (
-            <div style={{ fontFamily: MONO, fontSize: 10, color: MUTED, display: "flex", justifyContent: "space-between" }}>
-              <span>no to-dos</span>{last && <span>{last}</span>}
-            </div>
-          )}
+        <div style={{ marginTop: 11, fontFamily: MONO, fontSize: 10, color: MUTED, display: "flex", justifyContent: "space-between" }}>
+          <span>{remaining > 0 ? `${remaining} next step${remaining === 1 ? "" : "s"}` : "no next steps"}</span>
+          {last && <span>{last}</span>}
         </div>
       </div>
     </button>
@@ -70,8 +58,21 @@ export default function Workbench({ onLogout }) {
   const [openId, setOpenId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState("");
+  const [theme, setTheme] = useState(() => document.documentElement.dataset.theme || "light");
+  const [activeTags, setActiveTags] = useState([]);
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(""), 2600); };
+
+  const toggleTheme = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    document.documentElement.dataset.theme = next;
+    localStorage.setItem("theme", next);
+  };
+
+  const toggleTag = (tag) => {
+    setActiveTags((prev) => prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]);
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -89,9 +90,17 @@ export default function Workbench({ onLogout }) {
   useEffect(() => { load(); }, [load]);
 
   const open = projects.find((p) => p.id === openId) ?? null;
-  const active = projects.filter((p) => p.stage === "active");
-  const planned = projects.filter((p) => p.stage === "planning");
-  const paused = projects.filter((p) => p.stage === "paused" || p.stage === "archived");
+
+  // Union of all (non-"project") tags across projects, for the filter bar.
+  const allTags = [...new Set(projects.flatMap((p) => p.tags))].sort();
+  // A project matches when it carries every currently-selected tag.
+  const visible = activeTags.length
+    ? projects.filter((p) => activeTags.every((t) => p.tags.includes(t)))
+    : projects;
+
+  const active = visible.filter((p) => p.stage === "active");
+  const planned = visible.filter((p) => p.stage === "planning");
+  const paused = visible.filter((p) => p.stage === "paused" || p.stage === "archived");
 
   const updateContent = async (id, newContent) => {
     setSaving(true);
@@ -125,7 +134,7 @@ export default function Workbench({ onLogout }) {
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", background: "#faf8f3", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ minHeight: "100vh", background: BG, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <span style={{ fontFamily: MONO, fontSize: 12, color: MUTED }}>loading vault…</span>
       </div>
     );
@@ -133,7 +142,7 @@ export default function Workbench({ onLogout }) {
 
   if (error) {
     return (
-      <div style={{ minHeight: "100vh", background: "#faf8f3", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
+      <div style={{ minHeight: "100vh", background: BG, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
         <span style={{ fontFamily: MONO, fontSize: 12, color: "#c0392b" }}>error: {error}</span>
         <button onClick={load} style={{ fontFamily: MONO, fontSize: 12, padding: "8px 18px", border: `1px solid ${HAIR}`, borderRadius: 6, background: "transparent", color: MUTED, cursor: "pointer" }}>retry</button>
         <button onClick={onLogout} style={{ fontFamily: MONO, fontSize: 11, background: "none", border: "none", color: MUTED, cursor: "pointer", textDecoration: "underline" }}>change config</button>
@@ -144,15 +153,38 @@ export default function Workbench({ onLogout }) {
   return (
     <div style={{ minHeight: "100vh", background: "#faf8f3", padding: "44px 20px 80px" }}>
       <div style={{ maxWidth: 760, margin: "0 auto" }}>
-        <header style={{ marginBottom: 40, display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+        <header style={{ marginBottom: 28, display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
           <div>
-            <h1 style={{ fontFamily: DISPLAY, fontWeight: 600, fontSize: 30, color: INK, margin: 0, letterSpacing: ".01em" }}>The Workbench</h1>
+            <h1 style={{ fontFamily: DISPLAY, fontWeight: 600, fontSize: 30, color: INK, margin: 0, letterSpacing: ".01em" }}>Jon's workbench</h1>
             <div style={{ fontFamily: MONO, fontSize: 11, color: MUTED, marginTop: 6 }}>
               {projects.length} projects · parachute vault
             </div>
           </div>
-          <button onClick={load} title="refresh" style={{ fontFamily: MONO, fontSize: 11, background: "none", border: `1px solid ${HAIR}`, borderRadius: 5, padding: "5px 10px", color: MUTED, cursor: "pointer", marginTop: 4 }}>↺</button>
+          <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+            <button onClick={toggleTheme} title="toggle dark mode" style={{ fontFamily: MONO, fontSize: 11, background: "none", border: `1px solid ${HAIR}`, borderRadius: 5, padding: "5px 10px", color: MUTED, cursor: "pointer" }}>{theme === "dark" ? "☀" : "☾"}</button>
+            <button onClick={load} title="refresh" style={{ fontFamily: MONO, fontSize: 11, background: "none", border: `1px solid ${HAIR}`, borderRadius: 5, padding: "5px 10px", color: MUTED, cursor: "pointer" }}>↺</button>
+          </div>
         </header>
+
+        {allTags.length > 0 && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 40 }}>
+            {allTags.map((tag) => {
+              const on = activeTags.includes(tag);
+              return (
+                <button key={tag} onClick={() => toggleTag(tag)}
+                  style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".04em", padding: "5px 11px", borderRadius: 20, cursor: "pointer", border: `1px solid ${on ? INK : HAIR}`, background: on ? INK : "transparent", color: on ? ON_INK : MUTED }}>
+                  #{tag}
+                </button>
+              );
+            })}
+            {activeTags.length > 0 && (
+              <button onClick={() => setActiveTags([])}
+                style={{ fontFamily: MONO, fontSize: 10.5, padding: "5px 11px", borderRadius: 20, cursor: "pointer", border: "none", background: "none", color: MUTED, textDecoration: "underline" }}>
+                clear
+              </button>
+            )}
+          </div>
+        )}
 
         <section style={{ marginBottom: 52 }}>
           <ZoneLabel count={active.length}>On the bench</ZoneLabel>
@@ -186,7 +218,7 @@ export default function Workbench({ onLogout }) {
       <Drawer p={open} onClose={() => setOpenId(null)} onToggleTodo={toggleTodo} onAddLog={addLog} saving={saving} />
 
       {toast && (
-        <div style={{ position: "fixed", bottom: 26, left: "50%", transform: "translateX(-50%)", zIndex: 60, fontFamily: MONO, fontSize: 11.5, background: INK, color: "#faf8f3", padding: "11px 18px", borderRadius: 8, animation: "fade .2s ease-out" }}>
+        <div style={{ position: "fixed", bottom: 26, left: "50%", transform: "translateX(-50%)", zIndex: 60, fontFamily: MONO, fontSize: 11.5, background: INK, color: ON_INK, padding: "11px 18px", borderRadius: 8, animation: "fade .2s ease-out" }}>
           {toast}
         </div>
       )}

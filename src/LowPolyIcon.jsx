@@ -44,7 +44,7 @@ export default function LowPolyIcon({ seed, kind, size = 44 }) {
     <svg viewBox="0 0 100 100" width={size} height={size} style={{ display: "block" }}>
       <polygon points={outline} fill={`hsl(${hue} ${sat}% 40%)`} />
       {facets.map((f, i) => (
-        <polygon key={i} points={f.pts} fill={f.fill} stroke="#faf8f3" strokeWidth="0.8" strokeLinejoin="round" />
+        <polygon key={i} points={f.pts} fill={f.fill} stroke="var(--bg)" strokeWidth="0.8" strokeLinejoin="round" />
       ))}
     </svg>
   );
