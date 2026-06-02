@@ -118,6 +118,7 @@ export function parseNote(note) {
     goal,
     stage: note.metadata?.stage ?? "planning",
     kind: note.metadata?.kind ?? "digital",
+    tags: (note.tags ?? []).filter((t) => t !== "project"),
     log,
     todos,
     links,

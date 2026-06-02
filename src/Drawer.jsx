@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MONO, DISPLAY, BODY, INK, MUTED, HAIR, KIND_COLOR, bodyP } from "./styles";
+import { MONO, DISPLAY, INK, MUTED, HAIR, BG, PAPER, ON_INK, KIND_COLOR, bodyP } from "./styles";
 import KindStage from "./KindStage";
 
 function Section({ title, children }) {
@@ -25,7 +25,7 @@ export default function Drawer({ p, onClose, onToggleTodo, onAddLog, saving }) {
       />
       <div style={{
         position: "fixed", top: 0, right: 0, bottom: 0, width: "min(440px,100%)",
-        background: "#faf8f3", borderLeft: `1px solid ${HAIR}`, zIndex: 50,
+        background: BG, borderLeft: `1px solid ${HAIR}`, zIndex: 50,
         overflowY: "auto", animation: "slide .28s cubic-bezier(.2,.8,.3,1) both",
       }}>
         <div style={{ padding: "26px 28px 70px" }}>
@@ -74,12 +74,12 @@ export default function Drawer({ p, onClose, onToggleTodo, onAddLog, saving }) {
                   }
                 }}
                 placeholder="add a log entry"
-                style={{ flex: 1, fontFamily: MONO, fontSize: 12, padding: "9px 11px", border: `1px solid ${HAIR}`, borderRadius: 6, background: "#fff", color: INK }}
+                style={{ flex: 1, fontFamily: MONO, fontSize: 12, padding: "9px 11px", border: `1px solid ${HAIR}`, borderRadius: 6, background: PAPER, color: INK }}
               />
               <button
                 onClick={() => { if (entry.trim()) { onAddLog(p.id, entry.trim()); setEntry(""); } }}
                 disabled={saving}
-                style={{ fontFamily: MONO, fontSize: 12, padding: "0 15px", border: "none", borderRadius: 6, background: INK, color: "#faf8f3", cursor: saving ? "default" : "pointer", opacity: saving ? 0.5 : 1 }}
+                style={{ fontFamily: MONO, fontSize: 12, padding: "0 15px", border: "none", borderRadius: 6, background: INK, color: ON_INK, cursor: saving ? "default" : "pointer", opacity: saving ? 0.5 : 1 }}
               >
                 {saving ? "…" : "add"}
               </button>
